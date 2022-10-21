@@ -1,24 +1,18 @@
-{% extends 'base.html' %}
-{% block content %}
-{{pet.name}}
-{{pet.species}}
-<img src="{{pet.photo_url}}" alt="">
+{% extends 'base.html' %} {% block content %} {{pet.name}} {{pet.species}}
+<img src="{{pet.photo_url}}" alt="" />
 {{pet.age}}
+<hr />
+{% for msg in get_flashed_messages() %} {{ msg }} {% endfor %}
+<hr />
 <form id="add-pet-form" method="POST">
-  {{ form.hidden_tag() }} <!--add type=hidden form fields -->
+  {{ form.hidden_tag() }}
+  <!--add type=hidden form fields -->
 
-  {% for field in form
-         if field.widget.input_type != 'hidden' %}
-    {% if field.id in ('photo_url','notes','available')%}
-    <p>
-      {{ field.label }}
-      {{ field }}
-
-      {% for error in field.errors %}
-        {{ error }}
-      {% endfor %}
-    </p>
-  {% endif %}
+  {% for field in form if field.widget.input_type != 'hidden' %}
+  <p>
+    {{ field.label }} {{ field }} {% for error in field.errors %} {{ error }} {%
+    endfor %}
+  </p>
   {% endfor %}
 
   <button type="submit">Submit</button>

@@ -1,12 +1,12 @@
 """Flask app for adopt app."""
 
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, flash
 
 from flask_debugtoolbar import DebugToolbarExtension
 
 from models import db, connect_db, Pet
 
-from forms import AddPetForm
+from forms import AddPetForm, EditPetForm
 
 app = Flask(__name__)
 
@@ -26,20 +26,23 @@ db.create_all()
 toolbar = DebugToolbarExtension(app)
 
 @app.get("/")
-def show_base():
+def pet_home():
     """Show base page"""
+
     pets = Pet.query.all()
     return render_template("pets.html", pets = pets )
 
 @app.get("/add")
-def show_add_form():
+def pet_add_form():
     """Show pet add page"""
+
     form = AddPetForm()
     return render_template("form.html", form=form)
 
 @app.post("/add")
-def validate_form_input():
+def pet_add():
     """Validate new pet information"""
+
     form = AddPetForm()
     if form.validate_on_submit():
         name = form.name.data
@@ -47,23 +50,53 @@ def validate_form_input():
         photo_url = form.photo_url.data
         age = form.age.data
         notes = form.notes.data
+
         pet = Pet(
-            name=name, species=species, photo_url=photo_url,age=age,notes=notes)
+            name=name, 
+            species=species, 
+            photo_url=photo_url,
+            age=age,
+            notes=notes
+        )
+
         db.session.add(pet)
         db.session.commit()
+
         return redirect("/")
+        
     else:
         return render_template("form.html",form=form)
 
 @app.get("/<int:pet_id_number>")
-def show_pet_details(pet_id_number):
+def pet_detail(pet_id_number):
     """Display information about pet"""
+
     pet = Pet.query.get(pet_id_number)
-    form = AddPetForm()
+    form = EditPetForm()
 
     form.photo_url.data = pet.photo_url
     form.notes.data = pet.notes
     form.available.data = pet.available
 
-    return render_template("pet_detail.html",pet=pet, form=form)
+    return render_template("pet_detail.html", pet=pet, form=form)
 
+@app.post("/<int:pet_id_number>")
+def pet_update(pet_id_number):
+    """Update the pet's details and redirects to pet detail
+        if not valid rerender the form
+    """
+
+    pet = Pet.query.get(pet_id_number)
+    form = EditPetForm()
+
+    if form.validate_on_submit():
+        pet.photo_url = form.photo_url.data
+        pet.notes = form.notes.data
+        pet.available = form.available.data
+
+        db.session.commit()
+        flash("Your pet was updated!")
+        return redirect(f"/{pet_id_number}")
+    else:
+        flash('something went wrong!')
+        return render_template("pet_detail.html", pet=pet, form=form)
